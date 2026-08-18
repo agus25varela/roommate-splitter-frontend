@@ -35,7 +35,7 @@ mvn clean spring-boot:run
 Backend escucha en `http://localhost:8080`
 
 ## Demo en Vivo
-Frontend desplegado en Vercel: [roommate-splitter-frontend.vercel.app](https://roommate-splitter-frontend.vercel.app)
+Frontend desplegado en Vercel: [roommate-splitter-vue](https://roommate-splitter-one.vercel.app)
 
 *Nota: Para funcionalidad completa, necesita backend corriendo localmente*
 
