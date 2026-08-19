@@ -49,15 +49,80 @@
           <th style="border: 1px solid #ddd; padding: 8px;">Monto</th>
           <th style="border: 1px solid #ddd; padding: 8px;">Quién Pagó</th>
           <th style="border: 1px solid #ddd; padding: 8px;">Fecha</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Acciones</th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="gasto in gastos" :key="gasto.id" style="border: 1px solid #ddd;">
           <td style="border: 1px solid #ddd; padding: 8px;">{{ gasto.id }}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">{{ gasto.descripcion }}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${{ gasto.monto }}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">{{ gasto.quienPago }}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">{{ gasto.fecha }}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">
+            <span v-if="editandoId !== gasto.id">{{ gasto.descripcion }}</span>
+            <input
+                v-else
+                v-model="gastoEnEdicion.descripcion"
+                style="padding: 5px; width: 95%;"
+            />
+          </td>
+          <td style="border: 1px solid #ddd; padding: 8px;">
+            <span v-if="editandoId !== gasto.id">${{ gasto.monto }}</span>
+            <input
+                v-else
+                v-model.number="gastoEnEdicion.monto"
+                type="number"
+                style="padding: 5px; width: 95%;"
+            />
+          </td>
+          <td style="border: 1px solid #ddd; padding: 8px;">
+            <span v-if="editandoId !== gasto.id">{{ gasto.quienPago }}</span>
+            <select
+                v-else
+                v-model="gastoEnEdicion.quienPago"
+                style="padding: 5px; width: 100%;"
+            >
+              <option value="yo">Yo</option>
+              <option value="roommate_a">Roommate A</option>
+              <option value="roommate_b">Roommate B</option>
+            </select>
+          </td>
+          <td style="border: 1px solid #ddd; padding: 8px;">
+            <span v-if="editandoId !== gasto.id">{{ gasto.fecha }}</span>
+            <input
+                v-else
+                v-model="gastoEnEdicion.fecha"
+                type="date"
+                style="padding: 5px; width: 95%;"
+            />
+          </td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            <template v-if="editandoId !== gasto.id">
+              <button
+                  @click="iniciarEdicion(gasto)"
+                  style="padding: 5px 10px; background-color: #2196F3; color: white; border: none; cursor: pointer; margin-right: 5px;"
+              >
+                Editar
+              </button>
+              <button
+                  @click="eliminarGasto(gasto.id)"
+                  style="padding: 5px 10px; background-color: #f44336; color: white; border: none; cursor: pointer;"
+              >
+                Eliminar
+              </button>
+            </template>
+            <template v-else>
+              <button
+                  @click="guardarEdicion(gasto.id)"
+                  style="padding: 5px 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; margin-right: 5px;"
+              >
+                Guardar
+              </button>
+              <button
+                  @click="cancelarEdicion"
+                  style="padding: 5px 10px; background-color: #999; color: white; border: none; cursor: pointer;"
+              >
+                Cancelar
+              </button>
+            </template>
+          </td>
         </tr>
         </tbody>
       </table>
@@ -88,6 +153,8 @@ export default {
   setup() {
     const gastos = ref([])
     const balances = ref([])
+    const editandoId = ref(null)
+    const gastoEnEdicion = ref({})
     const nuevoGasto = ref({
       descripcion: '',
       monto: '',
@@ -97,13 +164,11 @@ export default {
 
     const API_URL = `${import.meta.env.VITE_API_URL}/gastos`
 
-    // Cargar gastos al montar el componente
     onMounted(() => {
       cargarGastos()
       cargarBalances()
     })
 
-    // Función para cargar gastos
     const cargarGastos = async () => {
       try {
         const response = await axios.get(API_URL)
@@ -113,7 +178,6 @@ export default {
       }
     }
 
-    // Función para cargar balances
     const cargarBalances = async () => {
       try {
         const response = await axios.get(`${API_URL}/balances`)
@@ -123,7 +187,6 @@ export default {
       }
     }
 
-    // Función para crear gasto
     const crearGasto = async () => {
       if (!nuevoGasto.value.descripcion || !nuevoGasto.value.monto || !nuevoGasto.value.quienPago || !nuevoGasto.value.fecha) {
         alert('Por favor completa todos los campos')
@@ -132,14 +195,12 @@ export default {
 
       try {
         await axios.post(API_URL, nuevoGasto.value)
-        // Limpiar el formulario
         nuevoGasto.value = {
           descripcion: '',
           monto: '',
           quienPago: '',
           fecha: ''
         }
-        // Recargar la lista y los balances
         cargarGastos()
         cargarBalances()
       } catch (error) {
@@ -148,11 +209,53 @@ export default {
       }
     }
 
+    const iniciarEdicion = (gasto) => {
+      editandoId.value = gasto.id
+      gastoEnEdicion.value = { ...gasto }
+    }
+
+    const guardarEdicion = async (id) => {
+      try {
+        await axios.put(`${API_URL}/${id}`, gastoEnEdicion.value)
+        editandoId.value = null
+        gastoEnEdicion.value = {}
+        cargarGastos()
+        cargarBalances()
+      } catch (error) {
+        console.error('Error editando gasto:', error)
+        alert('Error al editar el gasto')
+      }
+    }
+
+    const cancelarEdicion = () => {
+      editandoId.value = null
+      gastoEnEdicion.value = {}
+    }
+
+    const eliminarGasto = async (id) => {
+      if (confirm('¿Estás seguro de que querés eliminar este gasto?')) {
+        try {
+          await axios.delete(`${API_URL}/${id}`)
+          cargarGastos()
+          cargarBalances()
+        } catch (error) {
+          console.error('Error eliminando gasto:', error)
+          alert('Error al eliminar el gasto')
+        }
+      }
+    }
+
     return {
       gastos,
       balances,
       nuevoGasto,
-      crearGasto
+      editandoId,
+      gastoEnEdicion,
+      crearGasto,
+      iniciarEdicion,
+      guardarEdicion,
+      cancelarEdicion,
+      eliminarGasto
     }
   }
 }
