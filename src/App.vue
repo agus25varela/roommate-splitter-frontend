@@ -1,21 +1,22 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-    <div class="max-w-6xl mx-auto">
-      <!-- Header -->
-      <div class="text-center mb-12">
-        <h1 class="text-5xl font-bold text-white mb-2">💰 Roommate Splitter</h1>
-        <p class="text-slate-400 text-lg">Divide gastos de forma justa y transparente</p>
+  <LoginModal v-if="!usuarioLogueado" @login="handleLogin" />
+
+  <Sidebar v-else :usuario="usuario" @menu="pagActual = $event" @logout="handleLogout">
+    <!-- Dashboard -->
+    <div v-if="pagActual === 'dashboard'" class="space-y-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
+        <p class="text-slate-600">Resumen de tus gastos compartidos</p>
       </div>
+      <DashboardCharts :gastos="gastos" />
+    </div>
 
-      <!-- Grid responsivo -->
+    <!-- Gastos -->
+    <div v-else-if="pagActual === 'gastos'" class="space-y-8">
+      <h1 class="text-4xl font-bold">Mis Gastos</h1>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Formulario (sidebar en desktop, full en móvil) -->
-        <div class="lg:col-span-1">
-          <FormGasto @crear="crearGasto" />
-        </div>
-
-        <!-- Contenido principal -->
-        <div class="lg:col-span-2 space-y-8">
+        <FormGasto @crear="crearGasto" />
+        <div class="lg:col-span-2">
           <TablaGastos
               :gastos="gastos"
               :editandoId="editandoId"
@@ -25,21 +26,31 @@
               @cancelar="cancelarEdicion"
               @eliminar="eliminarGasto"
           />
-
-          <ResumenDeudas :balances="balances" />
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Balance -->
+    <div v-else-if="pagActual === 'balance'" class="space-y-8">
+      <h1 class="text-4xl font-bold">Balances</h1>
+      <ResumenDeudas :balances="balances" />
+    </div>
+  </Sidebar>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import LoginModal from './components/LoginModal.vue'
+import Sidebar from './components/Sidebar.vue'
 import FormGasto from './components/FormGasto.vue'
 import TablaGastos from './components/TablaGastos.vue'
 import ResumenDeudas from './components/ResumenDeudas.vue'
+import DashboardCharts from './components/DashboardCharts.vue'
 
+const usuarioLogueado = ref(false)
+const usuario = ref({})
+const pagActual = ref('dashboard')
 const gastos = ref([])
 const balances = ref([])
 const editandoId = ref(null)
@@ -47,9 +58,22 @@ const gastoEnEdicion = ref({})
 
 const API_URL = `${import.meta.env.VITE_API_URL}/gastos`
 
-onMounted(() => {
+const handleLogin = (usuarioData) => {
+  usuario.value = usuarioData
+  usuarioLogueado.value = true
   cargarGastos()
   cargarBalances()
+}
+
+const handleLogout = () => {
+  usuarioLogueado.value = false
+  usuario.value = {}
+  gastos.value = []
+  balances.value = []
+}
+
+onMounted(() => {
+  // No cargar nada hasta que haya login
 })
 
 const cargarGastos = async () => {
@@ -72,7 +96,6 @@ const cargarBalances = async () => {
 
 const crearGasto = async (nuevoGasto) => {
   try {
-    console.log('Enviando gasto:', nuevoGasto)
     await axios.post(API_URL, nuevoGasto)
     cargarGastos()
     cargarBalances()
