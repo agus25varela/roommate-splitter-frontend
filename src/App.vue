@@ -58,12 +58,18 @@ const gastoEnEdicion = ref({})
 
 const API_URL = `${import.meta.env.VITE_API_URL}/gastos`
 
-const handleLogin = (usuarioData) => {
-  usuario.value = usuarioData
-  usuarioLogueado.value = true
-  localStorage.setItem('usuario',JSON.stringify(usuarioData))
-  cargarGastos()
-  cargarBalances()
+const handleLogin = async (usuarioData) => {
+  try {
+    const response = await axios.post(`${import.meta.env.VITE_API_URL.replace('/api', '')}/api/usuarios/login`, usuarioData)
+    usuario.value = response.data
+    usuarioLogueado.value = true
+    localStorage.setItem('usuario', JSON.stringify(usuario.value))
+    cargarGastos()
+    cargarBalances()
+  } catch (error) {
+    console.error('Error login:', error)
+    alert('Error en login')
+  }
 }
 
 const handleLogout = () => {
@@ -86,7 +92,9 @@ onMounted(() => {
 
 const cargarGastos = async () => {
   try {
-    const response = await axios.get(API_URL)
+    const response = await axios.get(API_URL, {
+      params: { usuarioId: usuario.value.id }
+    })
     gastos.value = response.data
   } catch (error) {
     console.error('Error cargando gastos:', error)
@@ -104,7 +112,11 @@ const cargarBalances = async () => {
 
 const crearGasto = async (nuevoGasto) => {
   try {
-    await axios.post(API_URL, nuevoGasto)
+    const gastoParaEnviar = {
+      ...nuevoGasto,
+      usuarioId: usuario.value.id
+    }
+    await axios.post(API_URL, gastoParaEnviar)
     cargarGastos()
     cargarBalances()
   } catch (error) {
