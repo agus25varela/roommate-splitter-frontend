@@ -31,7 +31,9 @@
   <div class="card bg-base-100 shadow-lg">
     <div class="card-body">
       <h2 class="card-title mb-6">Distribución de Gastos</h2>
-      <Doughnut :data="chartData" :options="chartOptions" />
+      <div class="w-full h-64 flex justify-center">
+        <Doughnut :data="chartData" :options="chartOptions" />
+      </div>
     </div>
   </div>
 </template>

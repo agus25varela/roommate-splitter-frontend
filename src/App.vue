@@ -61,6 +61,7 @@ const API_URL = `${import.meta.env.VITE_API_URL}/gastos`
 const handleLogin = (usuarioData) => {
   usuario.value = usuarioData
   usuarioLogueado.value = true
+  localStorage.setItem('usuario',JSON.stringify(usuarioData))
   cargarGastos()
   cargarBalances()
 }
@@ -70,10 +71,17 @@ const handleLogout = () => {
   usuario.value = {}
   gastos.value = []
   balances.value = []
+  localStorage.removeItem('usuario')
 }
 
 onMounted(() => {
-  // No cargar nada hasta que haya login
+  const usuarioGuardado = localStorage.getItem('usuario')
+  if (usuarioGuardado) {
+    usuario.value = JSON.parse(usuarioGuardado)
+    usuarioLogueado.value = true
+    cargarGastos()
+    cargarBalances()
+  }
 })
 
 const cargarGastos = async () => {
