@@ -20,7 +20,7 @@
             📊 Dashboard
           </button>
           <button
-              @click="$emit('menu', 'gastos')"
+              @click="$emit('menu', 'gasto')"
               class="px-4 py-2 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
           >
             💸 Mis Gastos

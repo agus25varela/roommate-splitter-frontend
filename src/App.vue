@@ -8,17 +8,17 @@
         <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
         <p class="text-slate-600">Resumen de tus gastos compartidos</p>
       </div>
-      <DashboardCharts :gastos="gastos" />
+      <DashboardCharts :gasto="gasto" />
     </div>
 
     <!-- Gastos -->
-    <div v-else-if="pagActual === 'gastos'" class="space-y-8">
+    <div v-else-if="pagActual === 'gasto'" class="space-y-8">
       <h1 class="text-4xl font-bold">Mis Gastos</h1>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <FormGasto @crear="crearGasto" />
         <div class="lg:col-span-2">
-          <TablaGastos
-              :gastos="gastos"
+          <TablaGasto
+              :gasto="gasto"
               :editandoId="editandoId"
               :gastoEnEdicion="gastoEnEdicion"
               @editar="iniciarEdicion"
@@ -33,7 +33,7 @@
     <!-- Balance -->
     <div v-else-if="pagActual === 'balance'" class="space-y-8">
       <h1 class="text-4xl font-bold">Balances</h1>
-      <ResumenDeudas :balances="balances" />
+      <ResumenDeuda :balances="balances" />
     </div>
   </Sidebar>
 </template>
@@ -44,27 +44,27 @@ import axios from 'axios'
 import LoginModal from './components/LoginModal.vue'
 import Sidebar from './components/Sidebar.vue'
 import FormGasto from './components/FormGasto.vue'
-import TablaGastos from './components/TablaGastos.vue'
-import ResumenDeudas from './components/ResumenDeudas.vue'
+import TablaGasto from './components/TablaGasto.vue'
+import ResumenDeuda from './components/ResumenDeuda.vue'
 import DashboardCharts from './components/DashboardCharts.vue'
 
 const usuarioLogueado = ref(false)
 const usuario = ref({})
 const pagActual = ref('dashboard')
-const gastos = ref([])
+const gasto = ref([])
 const balances = ref([])
 const editandoId = ref(null)
 const gastoEnEdicion = ref({})
 
-const API_URL = `${import.meta.env.VITE_API_URL}/gastos`
+const API_URL = `${import.meta.env.VITE_API_URL}/gasto`
 
 const handleLogin = async (usuarioData) => {
   try {
-    const response = await axios.post(`${import.meta.env.VITE_API_URL.replace('/api', '')}/api/usuarios/login`, usuarioData)
+    const response = await axios.post(`${import.meta.env.VITE_API_URL.replace('/api', '')}/api/usuario/login`, usuarioData)
     usuario.value = response.data
     usuarioLogueado.value = true
     localStorage.setItem('usuario', JSON.stringify(usuario.value))
-    cargarGastos()
+    cargarGasto()
     cargarBalances()
   } catch (error) {
     console.error('Error login:', error)
@@ -75,7 +75,7 @@ const handleLogin = async (usuarioData) => {
 const handleLogout = () => {
   usuarioLogueado.value = false
   usuario.value = {}
-  gastos.value = []
+  gasto.value = []
   balances.value = []
   localStorage.removeItem('usuario')
 }
@@ -85,25 +85,27 @@ onMounted(() => {
   if (usuarioGuardado) {
     usuario.value = JSON.parse(usuarioGuardado)
     usuarioLogueado.value = true
-    cargarGastos()
+    cargarGasto()
     cargarBalances()
   }
 })
 
-const cargarGastos = async () => {
+const cargarGasto = async () => {
   try {
     const response = await axios.get(API_URL, {
       params: { usuarioId: usuario.value.id }
     })
-    gastos.value = response.data
+    gasto.value = response.data
   } catch (error) {
-    console.error('Error cargando gastos:', error)
+    console.error('Error cargando gasto:', error)
   }
 }
 
 const cargarBalances = async () => {
   try {
-    const response = await axios.get(`${API_URL}/balances`)
+    const response = await axios.get(`${API_URL}/balances`, {
+      params: { usuarioId: usuario.value.id }
+    })
     balances.value = response.data
   } catch (error) {
     console.error('Error cargando balances:', error)
@@ -117,7 +119,7 @@ const crearGasto = async (nuevoGasto) => {
       usuarioId: usuario.value.id
     }
     await axios.post(API_URL, gastoParaEnviar)
-    cargarGastos()
+    cargarGasto()
     cargarBalances()
   } catch (error) {
     console.error('Error creando gasto:', error)
@@ -135,7 +137,7 @@ const guardarEdicion = async (id) => {
     await axios.put(`${API_URL}/${id}`, gastoEnEdicion.value)
     editandoId.value = null
     gastoEnEdicion.value = {}
-    cargarGastos()
+    cargarGasto()
     cargarBalances()
   } catch (error) {
     console.error('Error editando gasto:', error)
@@ -151,7 +153,7 @@ const eliminarGasto = async (id) => {
   if (confirm('¿Estás seguro de que querés eliminar este gasto?')) {
     try {
       await axios.delete(`${API_URL}/${id}`)
-      cargarGastos()
+      cargarGasto()
       cargarBalances()
     } catch (error) {
       console.error('Error eliminando gasto:', error)

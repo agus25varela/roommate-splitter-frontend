@@ -46,15 +46,15 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 const props = defineProps({
-  gastos: Array
+  gasto: Array
 })
 
 const totalGastado = computed(() => {
-  return props.gastos?.reduce((sum, g) => sum + g.monto, 0) || 0
+  return props.gasto?.reduce((sum, g) => sum + g.monto, 0) || 0
 })
 
 const miAporte = computed(() => {
-  return props.gastos?.filter(g => g.quienPago === 'yo').reduce((sum, g) => sum + g.monto, 0) || 0
+  return props.gasto?.filter(g => g.quienPago === 'yo').reduce((sum, g) => sum + g.monto, 0) || 0
 })
 
 const miBalance = computed(() => {
@@ -62,15 +62,15 @@ const miBalance = computed(() => {
 })
 
 const yo = computed(() => {
-  return props.gastos?.filter(g => g.quienPago === 'yo').reduce((sum, g) => sum + g.monto, 0) || 0
+  return props.gasto?.filter(g => g.quienPago === 'yo').reduce((sum, g) => sum + g.monto, 0) || 0
 })
 
 const a = computed(() => {
-  return props.gastos?.filter(g => g.quienPago === 'roommate_a').reduce((sum, g) => sum + g.monto, 0) || 0
+  return props.gasto?.filter(g => g.quienPago === 'roommate_a').reduce((sum, g) => sum + g.monto, 0) || 0
 })
 
 const b = computed(() => {
-  return props.gastos?.filter(g => g.quienPago === 'roommate_b').reduce((sum, g) => sum + g.monto, 0) || 0
+  return props.gasto?.filter(g => g.quienPago === 'roommate_b').reduce((sum, g) => sum + g.monto, 0) || 0
 })
 
 const chartData = computed(() => ({
