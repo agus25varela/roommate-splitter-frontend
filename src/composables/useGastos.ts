@@ -28,5 +28,11 @@ export const useGastos = (usuarioId: string) => {
         gastos.value.reduce((sum: number, g: Gasto): number => sum + g.monto, 0)
     )
 
-    return { gastos, deudas, loading, error, cargarGastos, totalGastos }
+    return {
+        gastos: gastos,
+        deudas: deudas,
+        loading,
+        error,
+        cargarGastos
+    }
 }

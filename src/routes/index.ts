@@ -1,5 +1,6 @@
+// src/routes/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw, Router, NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import type { RouteRecordRaw, Router, RouteLocationNormalized } from 'vue-router'
 
 // Pages
 import LoginPage from '@/pages/LoginPage.vue'
@@ -37,25 +38,21 @@ const router: Router = createRouter({
     routes,
 })
 
-// Guard: protege rutas que requieren autenticación
+// Guard: protege rutas que requieren autenticación (sintaxis nueva)
 router.beforeEach(
-    (
-        to: RouteLocationNormalized,
-        from: RouteLocationNormalized,
-        next: NavigationGuardNext
-    ): void => {
+    (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
         const usuarioId = localStorage.getItem('usuarioId')
         const requiereAuth = to.meta?.requiresAuth
 
         if (requiereAuth && !usuarioId) {
             // No autenticado, redirige a login
-            next('/login')
+            return '/login'
         } else if (to.path === '/login' && usuarioId) {
             // Ya autenticado, redirige a dashboard
-            next('/dashboard')
-        } else {
-            next()
+            return '/dashboard'
         }
+        // Permitir navegación
+        return true
     }
 )
 

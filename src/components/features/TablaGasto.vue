@@ -4,7 +4,7 @@
       <h2 class="text-2xl font-bold text-slate-800">Gastos</h2>
     </div>
 
-    <div v-if="gasto.length === 0" class="p-6 text-center text-slate-500">
+    <div v-if="!gastos || gastos.length === 0" class="p-6 text-center text-slate-500">
       No hay gastos registrados aún.
     </div>
 
@@ -22,7 +22,7 @@
         </thead>
         <tbody>
         <tr
-            v-for="(gasto, idx) in gasto"
+            v-for="(gasto, idx) in gastos"
             :key="gasto.id"
             :class="[
               'border-b border-slate-200 transition',
@@ -116,7 +116,10 @@
 
 <script setup>
 defineProps({
-  gasto: Array,
+  gastos: {
+    type: Array,
+    default: () => []
+  },
   editandoId: Number,
   gastoEnEdicion: Object
 })
