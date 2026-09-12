@@ -1,12 +1,22 @@
 <template>
   <div v-if="usuario">
-    <MainLayout :usuario="usuario" @menu="handleMenu" @logout="handleLogout">
+    <MainLayout
+        :usuario="usuario"
+        :menuActivo="menuActivo"
+        @menu="handleMenu"
+        @logout="handleLogout"
+    >
       <div class="p-6">
         <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
 
-        <div class="grid grid-cols-12 gap-6">
-          <div class="col-span-8">
-            <FormGasto @crear="cargarGastos" />
+        <!-- Sección 1: Agregar Gasto -->
+        <div class="mb-6">
+          <FormGasto @crear="crear" />
+        </div>
+
+        <!-- Sección 2: Tabla de gastos y Resumen de deudas -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="lg:col-span-2">
             <TablaGasto
                 :gastos="gastosData"
                 :editandoId="editandoId"
@@ -18,10 +28,14 @@
             />
           </div>
 
-          <div class="col-span-4">
+          <div class="lg:col-span-1">
             <ResumenDeuda :deuda="deuda" />
-            <DashboardCharts :gasto="gastosData" />
           </div>
+        </div>
+
+        <!-- Sección 3: Dashboard -->
+        <div>
+          <DashboardCharts :gasto="gastosData" />
         </div>
       </div>
     </MainLayout>
@@ -46,6 +60,7 @@ import {Gasto} from "@/types";
 const router = useRouter()
 const { usuario, logout, cargarUsuario } = useAuth()
 const menuActivo = ref('dashboard')
+const crear = (gasto: Omit<Gasto, 'id'>) => gastosComposable?.crearGasto(gasto)
 
 // Variable para almacenar el composable
 let gastosComposable: ReturnType<typeof useGastos> | null = null
