@@ -11,7 +11,7 @@
           </div>
 
           <div class="col-span-4">
-            <ResumenDeuda :deuda="deudasData" />
+            <ResumenDeuda :deuda="deuda" />
             <DashboardCharts :gasto="gastosData" />
           </div>
         </div>
@@ -63,7 +63,7 @@ const gastosData = computed(() => {
   return gastosComposable?.gastos?.value || []
 })
 
-const deudasData = computed(() => {
+const deuda = computed(() => {
   return gastosComposable?.deudas?.value || []
 })
 
