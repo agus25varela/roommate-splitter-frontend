@@ -6,7 +6,7 @@
 
         <div class="grid grid-cols-12 gap-6">
           <div class="col-span-8">
-            <FormGasto @gasto-creado="cargarGastos" />
+            <FormGasto @crear="cargarGastos" />
             <TablaGasto :gastos="gastosData" />
           </div>
 
@@ -33,6 +33,7 @@ import ResumenDeuda from '@/components/features/ResumenDeuda.vue'
 import DashboardCharts from '@/components/features/DashboardCharts.vue'
 import { useGastos } from '@/composables/useGastos'
 import { useAuth } from '@/composables/useAuth'
+import {Gasto} from "@/types";
 
 const router = useRouter()
 const { usuario, logout, cargarUsuario } = useAuth()
@@ -68,9 +69,9 @@ const deuda = computed(() => {
 })
 
 
-const cargarGastos = () => {
+const cargarGastos = async (gasto: Omit<Gasto, 'id'>) => {
   if (gastosComposable) {
-    gastosComposable.cargarGastos()
+    await gastosComposable.crearGasto(gasto)
   }
 }
 

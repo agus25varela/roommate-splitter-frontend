@@ -10,8 +10,11 @@ export const gastosService = {
         return data
     },
 
-    async crearGasto(gasto: CreateGastoDTO): Promise<Gasto> {
-        const { data } = await api.post<Gasto>('/gasto', gasto)
+    async crearGasto(gasto: CreateGastoDTO, usuarioId: string): Promise<Gasto> {
+        const { data } = await api.post<Gasto>('/gasto', {
+            ...gasto,
+            usuarioId
+        })
         return data
     },
 

@@ -1,7 +1,7 @@
 // src/composables/useGastos.ts
 import { ref, computed } from 'vue'
 import { gastosService } from '@/services/gastosService'
-import type { Gasto, Deuda } from '@/types'
+import type { Gasto, Deuda, CreateGastoDTO } from '@/types'
 
 export const useGastos = (usuarioId: string) => {
     const gastos = ref<Gasto[]>([])
@@ -24,15 +24,30 @@ export const useGastos = (usuarioId: string) => {
         }
     }
 
+    const crearGasto = async (nuevoGasto: CreateGastoDTO): Promise<void> => {
+        loading.value = true
+        try {
+            await gastosService.crearGasto(nuevoGasto, usuarioId)
+            await cargarGastos()
+            error.value = null
+        } catch (e) {
+            error.value = 'Error al crear gasto'
+            console.error(e)
+        } finally {
+            loading.value = false
+        }
+    }
+
     const totalGastos = computed((): number =>
         gastos.value.reduce((sum: number, g: Gasto): number => sum + g.monto, 0)
     )
 
     return {
-        gastos: gastos,
-        deudas: deudas,
+        gastos,
+        deudas,
         loading,
         error,
-        cargarGastos
+        cargarGastos,
+        crearGasto
     }
 }
