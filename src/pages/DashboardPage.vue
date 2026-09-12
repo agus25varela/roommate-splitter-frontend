@@ -7,7 +7,15 @@
         <div class="grid grid-cols-12 gap-6">
           <div class="col-span-8">
             <FormGasto @crear="cargarGastos" />
-            <TablaGasto :gastos="gastosData" />
+            <TablaGasto
+                :gastos="gastosData"
+                :editandoId="editandoId"
+                :gastoEnEdicion="gastoEnEdicion"
+                @editar="manejarEditar"
+                @guardar="manejarGuardar"
+                @cancelar="manejarCancelar"
+                @eliminar="manejarEliminar"
+            />
           </div>
 
           <div class="col-span-4">
@@ -59,7 +67,7 @@ onMounted(() => {
   gastosComposable.cargarGastos()
 })
 
-// Valores reactivos usando computed
+// Valores reactivos
 const gastosData = computed(() => {
   return gastosComposable?.gastos?.value || []
 })
@@ -68,10 +76,38 @@ const deuda = computed(() => {
   return gastosComposable?.deudas?.value || []
 })
 
-
 const cargarGastos = async (gasto: Omit<Gasto, 'id'>) => {
   if (gastosComposable) {
     await gastosComposable.crearGasto(gasto)
+  }
+}
+
+const editandoId = ref<string | null>(null)
+const gastoEnEdicion = ref<Partial<Gasto>>({})
+
+const manejarEditar = (gasto: Gasto) => {
+  editandoId.value = gasto.id
+  gastoEnEdicion.value = { ...gasto }
+}
+
+const manejarGuardar = async (id: string) => {
+  if (gastosComposable) {
+    await gastosComposable.actualizarGasto(id, gastoEnEdicion.value)
+    editandoId.value = null
+    gastoEnEdicion.value = {}
+  }
+}
+
+const manejarCancelar = () => {
+  editandoId.value = null
+  gastoEnEdicion.value = {}
+}
+
+const manejarEliminar = async (id: string) => {
+  if (confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+    if (gastosComposable) {
+      await gastosComposable.eliminarGasto(id)
+    }
   }
 }
 

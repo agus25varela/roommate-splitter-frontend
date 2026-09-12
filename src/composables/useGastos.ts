@@ -38,6 +38,34 @@ export const useGastos = (usuarioId: string) => {
         }
     }
 
+    const actualizarGasto = async (id: string, gastoActualizado: Partial<Gasto>): Promise<void> => {
+        loading.value = true
+        try {
+            await gastosService.actualizarGasto(id, gastoActualizado)
+            await cargarGastos()
+            error.value = null
+        } catch (e) {
+            error.value = 'Error al actualizar gasto'
+            console.error(e)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const eliminarGasto = async (id: string): Promise<void> => {
+        loading.value = true
+        try {
+            await gastosService.eliminarGasto(id)
+            await cargarGastos()
+            error.value = null
+        } catch (e) {
+            error.value = 'Error al eliminar gasto'
+            console.error(e)
+        } finally {
+            loading.value = false
+        }
+        }
+
     const totalGastos = computed((): number =>
         gastos.value.reduce((sum: number, g: Gasto): number => sum + g.monto, 0)
     )
@@ -48,6 +76,8 @@ export const useGastos = (usuarioId: string) => {
         loading,
         error,
         cargarGastos,
-        crearGasto
+        crearGasto,
+        actualizarGasto,
+        eliminarGasto
     }
 }

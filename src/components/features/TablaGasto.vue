@@ -120,7 +120,7 @@ defineProps({
     type: Array,
     default: () => []
   },
-  editandoId: Number,
+  editandoId: [Number, String, null],
   gastoEnEdicion: Object
 })
 
