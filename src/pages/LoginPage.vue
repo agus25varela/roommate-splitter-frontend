@@ -1,184 +1,186 @@
-<template>
-  <div v-if="!isAutenticado()" class="fixed inset-0 flex z-50">
-    <!-- Columna izquierda: Imagen -->
-    <div class="hidden lg:flex w-1/2 bg-cover bg-center" :style="{ backgroundImage: 'url(/login-bg.jpg)' }">
-      <!-- La imagen se carga como background -->
-    </div>
-
-    <!-- Columna derecha: Formulario -->
-    <div class="w-full lg:w-1/2 bg-white flex items-center justify-center p-6">
-      <div class="w-full max-w-md">
-        <!-- Modo LOGIN -->
-        <template v-if="modo === 'login'">
-          <h2 class="text-4xl font-bold mb-2">Roommate Splitter</h2>
-          <p class="text-gray-600 mb-8">Divide gastos con tu comunidad</p>
-
-          <!-- Mostrar errores -->
-          <div v-if="error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-            {{ error }}
-          </div>
-
-          <form @submit.prevent="handleLogin" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                  v-model="loginForm.email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
-              <input
-                  v-model="loginForm.password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <button
-                :disabled="loading"
-                type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition mt-6"
-            >
-              {{ loading ? 'Ingresando...' : 'Ingresar' }}
-            </button>
-          </form>
-
-          <div class="mt-8 text-center">
-            <p class="text-sm text-gray-600 mb-4">¿No tenes cuenta?</p>
-            <button
-                @click="modo = 'signup'"
-                class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition"
-            >
-              Crear Cuenta
-            </button>
-          </div>
-        </template>
-
-        <!-- Modo SIGNUP -->
-        <template v-else-if="modo === 'signup'">
-          <h2 class="text-3xl font-bold mb-2">Crear Cuenta</h2>
-          <p class="text-gray-600 mb-8">Únete a Roommate Splitter</p>
-
-          <!-- Mostrar errores -->
-          <div v-if="error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-            {{ error }}
-          </div>
-
-          <form @submit.prevent="handleSignup" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                  v-model="signupForm.email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
-              <input
-                  v-model="signupForm.nombre"
-                  type="text"
-                  placeholder="Tu nombre"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
-              <input
-                  v-model="signupForm.password"
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <button
-                :disabled="loading"
-                type="submit"
-                class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition mt-6"
-            >
-              {{ loading ? 'Registrando...' : 'Registrarse' }}
-            </button>
-          </form>
-
-          <div class="mt-8 text-center">
-            <button
-                @click="modo = 'login'"
-                class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition"
-            >
-              ← Volver al Login
-            </button>
-          </div>
-        </template>
-      </div>
-    </div>
-  </div>
-
-  <!-- Si está autenticado, mostrar el dashboard -->
-  <div v-else>
-    <slot></slot>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+/**
+ * Página de login/signup.
+ *
+ * Usa el AuthLayout con el panel de marca y el formulario tipado; maneja
+ * errores de la API y validación básica de entrada.
+ */
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AuthLayout from '@/layout/AuthLayout.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppAlert from '@/components/ui/AppAlert.vue'
 import { useAuth } from '@/composables/useAuth'
 
-const router = useRouter()
-const { login, signup, loading, error, isAutenticado, cargarUsuario } = useAuth()
+type FormMode = 'login' | 'signup'
 
-const modo = ref<'login' | 'signup'>('login')
+const router = useRouter()
+const { login, signup, loading, error, cargarUsuario } = useAuth()
+
+const modo = ref<FormMode>('login')
 
 const loginForm = ref({
-  email: '',
-  password: ''
+    email: '',
+    password: '',
 })
 
 const signupForm = ref({
-  email: '',
-  nombre: '',
-  password: ''
+    email: '',
+    nombre: '',
+    password: '',
 })
 
-// Cargar usuario desde localStorage al montar el componente
+const fieldErrors = ref<Record<string, string>>({})
+
+function validarLogin(): boolean {
+    const errs: Record<string, string> = {}
+    if (!loginForm.value.email.trim()) errs.email = 'Ingresá tu email'
+    else if (!/^\S+@\S+\.\S+$/.test(loginForm.value.email)) errs.email = 'Email inválido'
+    if (!loginForm.value.password) errs.password = 'Ingresá tu contraseña'
+    fieldErrors.value = errs
+    return Object.keys(errs).length === 0
+}
+
+function validarSignup(): boolean {
+    const errs: Record<string, string> = {}
+    if (!signupForm.value.email.trim()) errs.email = 'Ingresá tu email'
+    else if (!/^\S+@\S+\.\S+$/.test(signupForm.value.email)) errs.email = 'Email inválido'
+    if (!signupForm.value.nombre.trim()) errs.nombre = 'Ingresá tu nombre'
+    else if (signupForm.value.nombre.trim().length < 2) errs.nombre = 'Mínimo 2 caracteres'
+    if (!signupForm.value.password) errs.password = 'Ingresá una contraseña'
+    else if (signupForm.value.password.length < 6) errs.password = 'Mínimo 6 caracteres'
+    fieldErrors.value = errs
+    return Object.keys(errs).length === 0
+}
+
+async function handleLogin(): Promise<void> {
+    if (!validarLogin()) return
+    try {
+        await login(loginForm.value.email.trim(), loginForm.value.password)
+        await router.push('/dashboard')
+    } catch {
+        // El error ya se expone en `error`.
+    }
+}
+
+async function handleSignup(): Promise<void> {
+    if (!validarSignup()) return
+    try {
+        await signup(
+            signupForm.value.email.trim(),
+            signupForm.value.nombre.trim(),
+            signupForm.value.password,
+        )
+        await router.push('/dashboard')
+    } catch {
+        // El error ya se expone en `error`.
+    }
+}
+
+function cambiarModo(next: FormMode): void {
+    modo.value = next
+    fieldErrors.value = {}
+}
+
 onMounted(() => {
-  cargarUsuario()
+    cargarUsuario()
 })
-
-const handleLogin = async () => {
-  if (!loginForm.value.email || !loginForm.value.password) {
-    return
-  }
-
-  try {
-    await login(loginForm.value.email, loginForm.value.password)
-    // Si login es exitoso, redirigir a dashboard
-    router.push('/dashboard')
-  } catch (err) {
-    // El error ya está en `error.value`, se muestra en el template
-  }
-}
-
-const handleSignup = async () => {
-  if (!signupForm.value.email || !signupForm.value.nombre || !signupForm.value.password) {
-    return
-  }
-
-  try {
-    await signup(signupForm.value.email, signupForm.value.nombre, signupForm.value.password)
-    // Si signup es exitoso, redirigir a dashboard
-    router.push('/dashboard')
-  } catch (err) {
-    // El error ya está en `error.value`, se muestra en el template
-  }
-}
 </script>
+
+<template>
+  <AuthLayout>
+    <template #title>
+      {{ modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}
+    </template>
+    <template #subtitle>
+      {{
+        modo === 'login'
+            ? 'Tus gastos y el panel del proyecto te esperan.'
+            : 'Unite a tu comunidad y dividí gastos en minutos.'
+      }}
+    </template>
+
+    <AppAlert v-if="error" variant="danger" title="No pudimos completar la operación" class="mb-4">
+      {{ error }}
+    </AppAlert>
+
+    <form v-if="modo === 'login'" class="space-y-4" novalidate @submit.prevent="handleLogin">
+      <AppInput
+          v-model="loginForm.email"
+          label="Email"
+          type="email"
+          placeholder="tu@email.com"
+          autocomplete="email"
+          :error="fieldErrors.email"
+          required
+      />
+      <AppInput
+          v-model="loginForm.password"
+          label="Contraseña"
+          type="password"
+          placeholder="Tu contraseña"
+          autocomplete="current-password"
+          :error="fieldErrors.password"
+          required
+      />
+      <AppButton type="submit" block :loading="loading">
+        Ingresar
+      </AppButton>
+      <p class="pt-2 text-center text-sm text-slate-500 dark:text-slate-400">
+        ¿Todavía no tenés cuenta?
+        <button
+            type="button"
+            class="font-semibold text-navy-700 hover:underline dark:text-navy-200"
+            @click="cambiarModo('signup')"
+        >
+          Crear cuenta
+        </button>
+      </p>
+    </form>
+
+    <form v-else class="space-y-4" novalidate @submit.prevent="handleSignup">
+      <AppInput
+          v-model="signupForm.email"
+          label="Email"
+          type="email"
+          placeholder="tu@email.com"
+          autocomplete="email"
+          :error="fieldErrors.email"
+          required
+      />
+      <AppInput
+          v-model="signupForm.nombre"
+          label="Nombre"
+          type="text"
+          placeholder="Tu nombre"
+          autocomplete="name"
+          :error="fieldErrors.nombre"
+          required
+      />
+      <AppInput
+          v-model="signupForm.password"
+          label="Contraseña"
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          autocomplete="new-password"
+          hint="Al menos 6 caracteres."
+          :error="fieldErrors.password"
+          required
+      />
+      <AppButton variant="success" type="submit" block :loading="loading">
+        Registrarse
+      </AppButton>
+      <p class="pt-2 text-center text-sm text-slate-500 dark:text-slate-400">
+        ¿Ya tenés cuenta?
+        <button
+            type="button"
+            class="font-semibold text-navy-700 hover:underline dark:text-navy-200"
+            @click="cambiarModo('login')"
+        >
+          Volver al inicio de sesión
+        </button>
+      </p>
+    </form>
+  </AuthLayout>
+</template>

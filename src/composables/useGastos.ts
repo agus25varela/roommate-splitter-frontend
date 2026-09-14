@@ -1,73 +1,77 @@
-// src/composables/useGastos.ts
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import type { Ref } from 'vue'
 import { gastosService } from '@/services/gastosService'
-import type { Gasto, Deuda, CreateGastoDTO } from '@/types'
+import { useFetch } from '@/composables/useFetch'
+import type { Gasto, CreateGastoDTO, UpdateGastoDTO, BalanceDTO } from '@/types'
 
-export const useGastos = (usuarioId: string) => {
-    const gastos = ref<Gasto[]>([])
-    const deudas = ref<Deuda[]>([])
-    const loading = ref<boolean>(false)
-    const error = ref<string | null>(null)
+/**
+ * Composable de gastos para un usuario autenticado.
+ *
+ * Consolida la carga de gastos y balances con `useFetch` y gestiona las
+ * operaciones de escritura (crear, actualizar, eliminar). Las operaciones de
+ * escritura siempre invalidan y recargan los datos desde la red.
+ *
+ * @param usuarioId identificador del usuario autenticado.
+ * @returns estados y acciones de gastos.
+ */
+export function useGastos(usuarioId: number) {
+    const gastosFetch = useFetch<Gasto[]>({
+        fetcher: (): Promise<Gasto[]> => gastosService.obtenerGastos(usuarioId),
+        initial: [],
+    })
+    const deudasFetch = useFetch<BalanceDTO[]>({
+        fetcher: (): Promise<BalanceDTO[]> => gastosService.obtenerBalances(usuarioId),
+        initial: [],
+    })
 
+    const gastos: Ref<Gasto[]> = gastosFetch.data as Ref<Gasto[]>
+    const deudas: Ref<BalanceDTO[]> = deudasFetch.data as Ref<BalanceDTO[]>
+
+    const loading = computed<boolean>(
+        (): boolean => gastosFetch.loading.value || deudasFetch.loading.value,
+    )
+    const error = computed<string | null>(() => gastosFetch.error.value ?? deudasFetch.error.value)
+
+    /**
+     * Recarga gastos y balances desde el backend.
+     */
     const cargarGastos = async (): Promise<void> => {
-        loading.value = true
-        try {
-            gastos.value = await gastosService.obtenerGastos(usuarioId)
-            const response = await gastosService.obtenerDeudas(usuarioId)
-            deudas.value = response.deudas
-            error.value = null
-        } catch (e) {
-            error.value = 'Error al cargar gastos'
-            console.error(e)
-        } finally {
-            loading.value = false
-        }
+        await Promise.all([gastosFetch.fetch(), deudasFetch.fetch()])
     }
 
+    /**
+     * Crea un gasto y recarga la vista.
+     *
+     * @param nuevoGasto DTO con los datos del gasto.
+     */
     const crearGasto = async (nuevoGasto: CreateGastoDTO): Promise<void> => {
-        loading.value = true
-        try {
-            await gastosService.crearGasto(nuevoGasto, usuarioId)
-            await cargarGastos()
-            error.value = null
-        } catch (e) {
-            error.value = 'Error al crear gasto'
-            console.error(e)
-        } finally {
-            loading.value = false
-        }
+        await gastosService.crearGasto(nuevoGasto)
+        await cargarGastos()
     }
 
-    const actualizarGasto = async (id: string, gastoActualizado: Partial<Gasto>): Promise<void> => {
-        loading.value = true
-        try {
-            await gastosService.actualizarGasto(id, gastoActualizado)
-            await cargarGastos()
-            error.value = null
-        } catch (e) {
-            error.value = 'Error al actualizar gasto'
-            console.error(e)
-        } finally {
-            loading.value = false
-        }
+    /**
+     * Actualiza un gasto y recarga la vista.
+     *
+     * @param id identificador del gasto.
+     * @param gastoActualizado campos a actualizar.
+     */
+    const actualizarGasto = async (id: number, gastoActualizado: UpdateGastoDTO): Promise<void> => {
+        await gastosService.actualizarGasto(id, gastoActualizado)
+        await cargarGastos()
     }
 
-    const eliminarGasto = async (id: string): Promise<void> => {
-        loading.value = true
-        try {
-            await gastosService.eliminarGasto(id)
-            await cargarGastos()
-            error.value = null
-        } catch (e) {
-            error.value = 'Error al eliminar gasto'
-            console.error(e)
-        } finally {
-            loading.value = false
-        }
-        }
+    /**
+     * Elimina un gasto y recarga la vista.
+     *
+     * @param id identificador del gasto.
+     */
+    const eliminarGasto = async (id: number): Promise<void> => {
+        await gastosService.eliminarGasto(id)
+        await cargarGastos()
+    }
 
-    const totalGastos = computed((): number =>
-        gastos.value.reduce((sum: number, g: Gasto): number => sum + g.monto, 0)
+    const totalGastos = computed<number>(() =>
+        gastos.value.reduce((sum: number, g: Gasto): number => sum + g.monto, 0),
     )
 
     return {
@@ -78,6 +82,9 @@ export const useGastos = (usuarioId: string) => {
         cargarGastos,
         crearGasto,
         actualizarGasto,
-        eliminarGasto
+        eliminarGasto,
+        totalGastos,
     }
 }
+
+export type UseGastosReturn = ReturnType<typeof useGastos>

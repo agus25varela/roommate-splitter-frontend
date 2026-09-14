@@ -1,8 +1,5 @@
-export interface Deuda {
-    entre: [string, string]
+export interface BalanceDTO {
+    deudor: string
+    acreedor: string
     monto: number
-}
-
-export interface DeudaResponse {
-    deudas: Deuda[]
 }

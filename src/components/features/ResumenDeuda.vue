@@ -1,34 +1,71 @@
-<template>
-  <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg shadow-lg p-6 border-2 border-orange-200">
-    <h2 class="text-2xl font-bold text-orange-600 mb-6">📊 Resumen de Deudas</h2>
+<script setup lang="ts">
+/**
+ * Resumen de deudas/balances entre roommates.
+ *
+ * Consume el contrato real del backend: `BalanceDTO[]` con
+ * `{ deudor, acreedor, monto }`.
+ */
+import { QUIEN_PAGO_LABEL, type QuienPago } from '@/types/gasto'
+import type { BalanceDTO } from '@/types'
+import Card from '@/components/ui/Card.vue'
+import SvgIcon from '@/components/ui/SvgIcon.vue'
 
-    <div v-if="deuda.length === 0" class="text-center py-6">
-      <p class="text-slate-600 text-lg">✓ Todos pagaron el mismo monto. ¡Balances en 0!</p>
-    </div>
+defineProps<{
+    deuda: BalanceDTO[]
+}>()
 
-    <div v-else class="space-y-3">
-      <div
-          v-for="balance in deuda"
-          :key="`${balance.from}-${balance.to}`"
-          class="bg-white rounded-lg p-4 border-l-4 border-orange-400 shadow-sm hover:shadow-md transition"
-      >
-        <p class="text-slate-700">
-          <span class="font-bold text-slate-800">{{ balance.from }}</span>
-          <span class="text-slate-500"> le debe </span>
-          <span class="font-bold text-orange-600 text-lg">${{ balance.amount.toFixed(2) }}</span>
-          <span class="text-slate-500"> a </span>
-          <span class="font-bold text-slate-800">{{ balance.to }}</span>
-        </p>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup>
-defineProps({
-  deuda: {
-    type: Array,
-    default: () => []
-  }
-})
+/**
+ * Traduce el identificador de persona a una etiqueta legible.
+ *
+ * @param persona identificador `yo` | `roommate_a` | `roommate_b` o libre.
+ * @returns etiqueta a mostrar.
+ */
+function personaLabel(persona: string): string {
+    if (persona in QUIEN_PAGO_LABEL) {
+        return QUIEN_PAGO_LABEL[persona as QuienPago]
+    }
+    return persona
+}
 </script>
+
+<template>
+  <Card>
+    <div class="mb-4 flex items-center gap-3">
+      <span
+          class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+      >
+        <SvgIcon name="activity" :size="18" aria-hidden="true" />
+      </span>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white">Resumen de deudas</h2>
+    </div>
+
+    <div v-if="deuda.length === 0" class="py-6 text-center">
+      <SvgIcon name="check-circle" :size="28" class="mx-auto text-emerald-500" aria-hidden="true" />
+      <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+        Todos pagaron el mismo monto. ¡Balances en 0!
+      </p>
+    </div>
+
+    <ul v-else class="space-y-3">
+      <li
+          v-for="(balance, idx) in deuda"
+          :key="`${balance.deudor}-${balance.acreedor}-${idx}`"
+          class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-navy-700 dark:bg-navy-800/60"
+      >
+        <p class="text-sm text-slate-700 dark:text-slate-300">
+          <span class="font-semibold text-slate-900 dark:text-white">
+            {{ personaLabel(balance.deudor) }}
+          </span>
+          le debe
+          <span class="font-bold text-emerald-700 dark:text-emerald-300">
+            ${{ balance.monto.toFixed(2) }}
+          </span>
+          a
+          <span class="font-semibold text-slate-900 dark:text-white">
+            {{ personaLabel(balance.acreedor) }}
+          </span>
+        </p>
+      </li>
+    </ul>
+  </Card>
+</template>

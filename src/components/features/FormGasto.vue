@@ -1,88 +1,137 @@
-<template>
-  <div class="bg-white rounded-lg shadow-lg p-6 border border-slate-200">
-    <h2 class="text-2xl font-bold text-slate-800 mb-6">Agregar Gasto</h2>
+<script setup lang="ts">
+/**
+ * Formulario para agregar un gasto (nueva UI del design system).
+ *
+ * Emite `CreateGastoDTO` tipado tras validar los campos.
+ */
+import { onMounted, ref } from 'vue'
+import Card from '@/components/ui/Card.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import SvgIcon from '@/components/ui/SvgIcon.vue'
+import {
+    QUIEN_PAGO_OPCIONES,
+    QUIEN_PAGO_LABEL,
+    type CreateGastoDTO,
+    type QuienPago,
+} from '@/types/gasto'
 
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">Descripción</label>
-        <input
-            v-model="descripcion"
-            type="text"
-            placeholder="Ej: Luz, Internet, Comida"
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-        />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">Monto ($)</label>
-        <input
-            v-model.number="monto"
-            type="number"
-            placeholder="0.00"
-            step="0.01"
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-        />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">¿Quién pagó?</label>
-        <select
-            v-model="quienPago"
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
-        >
-          <option value="">Selecciona quién pagó</option>
-          <option value="yo">Yo</option>
-          <option value="roommate_a">Roommate A</option>
-          <option value="roommate_b">Roommate B</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">Fecha</label>
-        <input
-            v-model="fecha"
-            type="date"
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-        />
-      </div>
-
-      <button
-          @click="handleAgregar"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 transform hover:scale-105"
-      >
-        ✓ Agregar Gasto
-      </button>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-
-const emit = defineEmits(['crear'])
+const emit = defineEmits<{
+    (e: 'crear', gasto: Omit<CreateGastoDTO, 'usuarioId'>): void
+}>()
 
 const descripcion = ref('')
 const monto = ref('')
-const quienPago = ref('')
+const quienPago = ref<string>('')
 const fecha = ref('')
 
-const handleAgregar = () => {
-  if (!descripcion.value || !monto.value || !quienPago.value || !fecha.value) {
-    alert('Por favor completa todos los campos')
-    return
-  }
+const fieldErrors = ref<Record<string, string>>({})
 
-  emit('crear', {
-    descripcion: descripcion.value,
-    monto: parseFloat(monto.value),
-    quienPago: quienPago.value,
-    fecha: fecha.value
-  })
+const options = QUIEN_PAGO_OPCIONES.map((p: QuienPago) => ({
+    value: p,
+    label: QUIEN_PAGO_LABEL[p],
+}))
 
-  // Limpiar
-  descripcion.value = ''
-  monto.value = ''
-  quienPago.value = ''
-  fecha.value = ''
+function hoyISO(): string {
+    return new Date().toISOString().slice(0, 10)
 }
+
+function validar(): boolean {
+    const errs: Record<string, string> = {}
+    if (descripcion.value.trim().length < 3) {
+        errs.descripcion = 'La descripción debe tener al menos 3 caracteres'
+    }
+    const montoNum = Number(monto.value)
+    if (!monto.value || Number.isNaN(montoNum) || montoNum <= 0) {
+        errs.monto = 'Ingresá un monto mayor a 0'
+    }
+    if (!quienPago.value) {
+        errs.quienPago = 'Seleccioná quién pagó'
+    }
+    if (!fecha.value) {
+        errs.fecha = 'Elegí una fecha'
+    }
+    fieldErrors.value = errs
+    return Object.keys(errs).length === 0
+}
+
+function handleAgregar(): void {
+    if (!validar()) return
+    emit('crear', {
+        descripcion: descripcion.value.trim(),
+        monto: Number(monto.value),
+        quienPago: quienPago.value as QuienPago,
+        fecha: fecha.value,
+    })
+    descripcion.value = ''
+    monto.value = ''
+    quienPago.value = ''
+    fecha.value = hoyISO()
+    fieldErrors.value = {}
+}
+
+onMounted(() => {
+    fecha.value = hoyISO()
+})
 </script>
+
+<template>
+  <Card>
+    <div class="mb-4 flex items-center gap-3">
+      <span
+          class="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-100 text-navy-700 dark:bg-navy-800 dark:text-navy-200"
+      >
+        <SvgIcon name="wallet" :size="18" aria-hidden="true" />
+      </span>
+      <div>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Agregar gasto</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Registrá un nuevo gasto compartido</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" role="form" aria-label="Nuevo gasto">
+      <div class="sm:col-span-2">
+        <AppInput
+            v-model="descripcion"
+            label="Descripción"
+            placeholder="Ej: Luz, Internet, Comida"
+            :error="fieldErrors.descripcion"
+            required
+        />
+      </div>
+
+      <AppInput
+          v-model="monto"
+          label="Monto ($)"
+          type="number"
+          placeholder="0.00"
+          :error="fieldErrors.monto"
+          required
+      />
+
+      <AppSelect
+          v-model="quienPago"
+          label="¿Quién pagó?"
+          :options="options"
+          placeholder="Seleccioná quién pagó"
+          :error="fieldErrors.quienPago"
+          required
+      />
+
+      <div class="sm:col-span-2">
+        <AppInput
+            v-model="fecha"
+            label="Fecha"
+            type="date"
+            :error="fieldErrors.fecha"
+            required
+        />
+      </div>
+
+      <div class="sm:col-span-2">
+        <AppButton block icon="plus" @click="handleAgregar">Agregar gasto</AppButton>
+      </div>
+    </div>
+  </Card>
+</template>
