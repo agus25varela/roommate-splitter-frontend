@@ -274,7 +274,7 @@ function demoDashboard(warning: string): DashboardData {
     const runs = demoRuns.map((r) => ({ ...r }))
 
     return {
-        repo: env.hasGithubRepo ? `${env.githubOwner}/${env.githubRepo}` : 'gus25varela/roommate-splitter-backend',
+        repo: env.hasGithubRepo ? `${env.githubOwner}/${env.githubRepo}` : 'agus25varela/roommate-splitter-backend',
         defaultBranch: 'main',
         repoUrl: '#',
         commits,
